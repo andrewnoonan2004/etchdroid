@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpCenter
@@ -44,6 +45,9 @@ import androidx.compose.material.icons.twotone.Clear
 import androidx.compose.material.icons.twotone.Info
 import androidx.compose.material.icons.twotone.Policy
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -62,9 +66,14 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import eu.depau.etchdroid.ui.utils.ExpressiveWavyProgressIndicator
+import eu.depau.etchdroid.ui.utils.expressiveFocusBorder
+import eu.depau.etchdroid.ui.utils.handleKeyboardShortcuts
+import eu.depau.etchdroid.ui.utils.hoverHandCursor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -300,66 +309,75 @@ class MainActivity : ActivityBase() {
 
 
             MainView(mViewModel, snackbarHost = { SnackbarHost(snackbarHostState) }) {
-                StartView(
-                    mViewModel,
-                    setThemeMode = { mSettings.themeMode = it },
-                    setDynamicTheme = { mSettings.dynamicColors = it },
-                    onCTAClick = {
-                        Telemetry.addBreadcrumb {
-                            message = "User clicked on Write an image"
-                            category = "flow"
-                            level = TelemetryLevel.DEBUG
-                        }
-                        launchFilePicker()
-                    },
-                    openAboutView = {
-                        startActivity(Intent(this, AboutActivity::class.java))
-                    },
-                    toggleTelemetry = {
-                        if (mViewModel.state.value.telemetry) {
-                            telemetryDialogOpen = true
-                        } else {
-                            setTelemetry(true)
-                        }
-                    }
-                )
-                val uiState by mViewModel.state.collectAsState()
-                if (uiState.showWindowsAlertForUri != null) {
-                    WindowsImageAlertDialog(
-                        onDismissRequest = { mViewModel.setShowWindowsAlertUri(null) },
-                        onConfirm = { openUri(uiState.showWindowsAlertForUri!!, true) })
-                }
-                if (uiState.openedImage != null) {
-                    UsbDevicePickerBottomSheet(
-                        onDismissRequest = {
-                            mViewModel.setOpenedImage(null)
-                        },
-                        selectDevice = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .handleKeyboardShortcuts(
+                            onOpenFile = { launchFilePicker() },
+                            onRefresh = { registerUsbReceiver() }
+                        )
+                ) {
+                    StartView(
+                        mViewModel,
+                        setThemeMode = { mSettings.themeMode = it },
+                        setDynamicTheme = { mSettings.dynamicColors = it },
+                        onCTAClick = {
                             Telemetry.addBreadcrumb {
-                                message =
-                                    "User selected USB device, opening confirmation activity: $it"
+                                message = "User clicked on Write an image"
                                 category = "flow"
-                                level = TelemetryLevel.INFO
-                                data["usb.device"] = it.toString()
-                                data["usb.name"] = it.name
-                                data["usb.vidpid"] = it.vidpid
+                                level = TelemetryLevel.DEBUG
                             }
-
-                            launchConfirmationActivity(
-                                it as UsbMassStorageDeviceDescriptor,
-                                mViewModel.state.value.openedImage!!,
-                            )
+                            launchFilePicker()
                         },
-                        availableDevices = { uiState.massStorageDevices }
+                        openAboutView = {
+                            startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                        },
+                        toggleTelemetry = {
+                            if (mViewModel.state.value.telemetry) {
+                                telemetryDialogOpen = true
+                            } else {
+                                setTelemetry(true)
+                            }
+                        }
                     )
-                }
+                    val uiState by mViewModel.state.collectAsState()
+                    if (uiState.showWindowsAlertForUri != null) {
+                        WindowsImageAlertDialog(
+                            onDismissRequest = { mViewModel.setShowWindowsAlertUri(null) },
+                            onConfirm = { openUri(uiState.showWindowsAlertForUri!!, true) })
+                    }
+                    if (uiState.openedImage != null) {
+                        UsbDevicePickerBottomSheet(
+                            onDismissRequest = {
+                                mViewModel.setOpenedImage(null)
+                            },
+                            selectDevice = {
+                                Telemetry.addBreadcrumb {
+                                    message =
+                                        "User selected USB device, opening confirmation activity: $it"
+                                    category = "flow"
+                                    level = TelemetryLevel.INFO
+                                    data["usb.device"] = it.toString()
+                                    data["usb.name"] = it.name
+                                    data["usb.vidpid"] = it.vidpid
+                                }
 
-                if (telemetryDialogOpen) {
-                    TelemetryAlertDialog(
-                        onDismissRequest = { telemetryDialogOpen = false },
-                        onOptOut = { setTelemetry(false) },
-                        onCancel = { setTelemetry(true) }
-                    )
+                                launchConfirmationActivity(
+                                    it as UsbMassStorageDeviceDescriptor,
+                                    mViewModel.state.value.openedImage!!,
+                                )
+                            },
+                            availableDevices = { uiState.massStorageDevices }
+                        )
+                    }
+
+                    if (telemetryDialogOpen) {
+                        TelemetryAlertDialog(
+                            onDismissRequest = { telemetryDialogOpen = false },
+                            onOptOut = { setTelemetry(false) },
+                            onCancel = { setTelemetry(true) }
+                        )
+                    }
                 }
 
                 if (!Telemetry.isStub && mSettings.showTelemetryBanner) {
@@ -400,6 +418,7 @@ fun StartViewLayout(
     bottomButton: @Composable () -> Unit,
     menuButton: @Composable () -> Unit,
     dropdownMenu: @Composable () -> Unit,
+    sidePane: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     ScreenSizeLayoutSelector(
@@ -495,6 +514,66 @@ fun StartViewLayout(
                     dropdownMenu()
                 }
             }
+        },
+        expanded = {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = CONTENT_WIDTH)
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Box(modifier = Modifier.padding(top = 16.dp)) {
+                            title()
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(40.dp),
+                            modifier = Modifier.padding(vertical = 32.dp)
+                        ) {
+                            logo()
+                            mainButton()
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            bottomButton()
+                            Box {
+                                menuButton()
+                                dropdownMenu()
+                            }
+                        }
+                    }
+                }
+
+                if (sidePane != null) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .fillMaxSize()
+                    ) {
+                        sidePane()
+                    }
+                }
+            }
         }
     )
 
@@ -567,7 +646,10 @@ fun StartView(
             val label = stringResource(R.string.write_an_image)
             ExtendedFloatingActionButton(
                 onClick = onCTAClick,
-                modifier = Modifier.appiumTag("writeImageCTA"),
+                modifier = Modifier
+                    .appiumTag("writeImageCTA")
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.extraLarge),
                 text = { Text(label) },
                 icon = {
                     Icon(
@@ -581,12 +663,22 @@ fun StartView(
             )
         },
         bottomButton = {
-            OutlinedButton(onClick = { whatCanIWriteOpen = true }) {
+            OutlinedButton(
+                onClick = { whatCanIWriteOpen = true },
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium)
+            ) {
                 Text(stringResource(R.string.whats_supported))
             }
         },
         menuButton = {
-            IconButton(onClick = { menuOpen = true }) {
+            IconButton(
+                onClick = { menuOpen = true },
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(CircleShape)
+            ) {
                 Icon(
                     modifier = Modifier.size(20.dp),
                     imageVector = Icons.Default.MoreVert,
@@ -608,6 +700,7 @@ fun StartView(
 
                 // Radio buttons for theme modes SYSTEM, LIGHT, DARK
                 DropdownMenuItem(
+                    modifier = Modifier.hoverHandCursor(),
                     onClick = { setThemeMode(ThemeMode.SYSTEM) },
                     text = { Text(stringResource(R.string.device_setting)) },
                     leadingIcon = {
@@ -617,6 +710,7 @@ fun StartView(
                             onClick = { setThemeMode(ThemeMode.SYSTEM) })
                     })
                 DropdownMenuItem(
+                    modifier = Modifier.hoverHandCursor(),
                     onClick = { setThemeMode(ThemeMode.LIGHT) },
                     text = { Text(stringResource(R.string.light)) }, leadingIcon = {
                         RadioButton(
@@ -625,6 +719,7 @@ fun StartView(
                             onClick = { setThemeMode(ThemeMode.LIGHT) })
                     })
                 DropdownMenuItem(
+                    modifier = Modifier.hoverHandCursor(),
                     onClick = { setThemeMode(ThemeMode.DARK) },
                     text = { Text(stringResource(R.string.dark)) }, leadingIcon = {
                         RadioButton(
@@ -635,6 +730,7 @@ fun StartView(
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     DropdownMenuItem(
+                        modifier = Modifier.hoverHandCursor(),
                         onClick = { setDynamicTheme(!uiState.dynamicColors) },
                         text = { Text(stringResource(R.string.dynamic_colors)) },
                         leadingIcon = {
@@ -655,6 +751,7 @@ fun StartView(
                     )
 
                     DropdownMenuItem(
+                        modifier = Modifier.hoverHandCursor(),
                         onClick = { toggleTelemetry() },
                         text = { Text(stringResource(R.string.send_anonymous_data)) },
                         leadingIcon = {
@@ -668,6 +765,7 @@ fun StartView(
 
                     val context = LocalContext.current
                     DropdownMenuItem(
+                        modifier = Modifier.hoverHandCursor(),
                         onClick = {
                             context.startActivity(
                                 Intent(
@@ -689,6 +787,7 @@ fun StartView(
                 HorizontalDivider()
 
                 DropdownMenuItem(
+                    modifier = Modifier.hoverHandCursor(),
                     onClick = { openAboutView() },
                     text = { Text(stringResource(R.string.about)) }, leadingIcon = {
                         Icon(
@@ -696,6 +795,139 @@ fun StartView(
                             contentDescription = stringResource(R.string.about)
                         )
                     })
+            }
+        },
+        sidePane = {
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 16.dp),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.usb_drive_dashboard_title),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                text = stringResource(R.string.app_tagline),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
+                            Text(
+                                text = "M3 Expressive",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                    if (uiState.massStorageDevices.isNotEmpty()) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uiState.massStorageDevices.toList()) { device ->
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .hoverHandCursor()
+                                        .expressiveFocusBorder(MaterialTheme.shapes.medium)
+                                        .clickable {
+                                            onCTAClick()
+                                        },
+                                    shape = MaterialTheme.shapes.medium,
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh
+                                ) {
+                                    ListItem(
+                                        headlineContent = {
+                                            Text(
+                                                device.name,
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                        },
+                                        supportingContent = {
+                                            Text(
+                                                device.vidpid,
+                                                fontStyle = FontStyle.Italic
+                                            )
+                                        },
+                                        leadingContent = {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(
+                                                    id = R.drawable.ic_usb_stick
+                                                ),
+                                                contentDescription = "USB drive",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        },
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.TwoTone.Check,
+                                                contentDescription = "Ready",
+                                                tint = supportedGreen(darkMode)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(96.dp),
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_usb_stick_search),
+                                contentDescription = stringResource(R.string.looking_for_usb_drives),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.connect_a_usb_drive),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            ExpressiveWavyProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(0.6f)
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                    Text(
+                        text = stringResource(R.string.keyboard_shortcuts_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         },
     ) {
@@ -821,55 +1053,64 @@ fun UsbDevicePickerBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = bottomSheetState,
     ) {
-        Text(
-            text = if (anyDeviceAvailable) stringResource(
-                R.string.select_a_usb_drive
-            ) else stringResource(
-                R.string.connect_a_usb_drive
-            ), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center,
+        Column(
             modifier = Modifier
-                .padding(32.dp, 0.dp, 32.dp, 16.dp)
+                .widthIn(max = 560.dp)
                 .fillMaxWidth()
-        )
-        if (anyDeviceAvailable) {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(availableDevices().toList()) { device ->
-                    ListItem(
-                        modifier = Modifier
-                            .appiumTag("usbDeviceListItem")
-                            .clickable { selectDevice(device) },
-                        headlineContent = { Text(device.name) },
-                        supportingContent = { Text(device.vidpid, fontStyle = FontStyle.Italic) },
-                        leadingContent = {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(
-                                    id = R.drawable.ic_usb_stick
-                                ),
-                                contentDescription = "USB drive"
-                            )
-                        },
-                    )
+                .align(Alignment.CenterHorizontally)
+        ) {
+            Text(
+                text = if (anyDeviceAvailable) stringResource(
+                    R.string.select_a_usb_drive
+                ) else stringResource(
+                    R.string.connect_a_usb_drive
+                ), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(32.dp, 0.dp, 32.dp, 16.dp)
+                    .fillMaxWidth()
+            )
+            if (anyDeviceAvailable) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(availableDevices().toList()) { device ->
+                        ListItem(
+                            modifier = Modifier
+                                .appiumTag("usbDeviceListItem")
+                                .hoverHandCursor()
+                                .expressiveFocusBorder(MaterialTheme.shapes.medium)
+                                .clickable { selectDevice(device) },
+                            headlineContent = { Text(device.name) },
+                            supportingContent = { Text(device.vidpid, fontStyle = FontStyle.Italic) },
+                            leadingContent = {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(
+                                        id = R.drawable.ic_usb_stick
+                                    ),
+                                    contentDescription = "USB drive"
+                                )
+                            },
+                        )
+                    }
                 }
+            } else {
+                Icon(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp)
+                        .height(128.dp),
+                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_usb_stick_search),
+                    contentDescription = stringResource(R.string.looking_for_usb_drives),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        } else {
-            Icon(
+
+            ExpressiveWavyProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(48.dp)
-                    .height(128.dp),
-                imageVector = ImageVector.vectorResource(id = R.drawable.ic_usb_stick_search),
-                contentDescription = stringResource(R.string.looking_for_usb_drives),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
             )
         }
-
-        LinearProgressIndicator(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp, 24.dp, 0.dp, 0.dp),
-        )
     }
 }
 

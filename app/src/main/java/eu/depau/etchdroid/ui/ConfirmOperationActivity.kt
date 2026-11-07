@@ -98,6 +98,9 @@ import eu.depau.etchdroid.service.WorkerService
 import eu.depau.etchdroid.ui.composables.MainView
 import eu.depau.etchdroid.ui.composables.ScreenSizeLayoutSelector
 import eu.depau.etchdroid.ui.composables.appiumTag
+import eu.depau.etchdroid.ui.utils.expressiveFocusBorder
+import eu.depau.etchdroid.ui.utils.handleKeyboardShortcuts
+import eu.depau.etchdroid.ui.utils.hoverHandCursor
 import eu.depau.etchdroid.utils.broadcastReceiver
 import eu.depau.etchdroid.utils.ktexts.formatID
 import eu.depau.etchdroid.utils.ktexts.getFileName
@@ -307,35 +310,48 @@ class ConfirmOperationActivity : ActivityBase() {
                     }
                 }
 
-                ConfirmationView(mViewModel, onConfirm = {
-                    showLayFlatDialog = true
-                }, onCancel = {
-                    finish()
-                }, askUsbPermission = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .handleKeyboardShortcuts(
+                            onBack = { finish() },
+                            onConfirm = {
+                                if (uiState.selectedDevice != null && uiState.hasUsbPermission) {
+                                    showLayFlatDialog = true
+                                }
+                            }
+                        )
+                ) {
+                    ConfirmationView(mViewModel, onConfirm = {
+                        showLayFlatDialog = true
+                    }, onCancel = {
+                        finish()
+                    }, askUsbPermission = {
 //                    Monitoring.addBreadcrumb("Requesting USB permission", "usb")
-                    Telemetry.addBreadcrumb {
-                        category = "usb"
-                        message = "Requesting USB permission: ${uiState.selectedDevice}"
-                        data["usb.name"] = uiState.selectedDevice?.name ?: "unknown"
-                        data["usb.vidpid"] = uiState.selectedDevice?.vidpid ?: "unknown"
+                        Telemetry.addBreadcrumb {
+                            category = "usb"
+                            message = "Requesting USB permission: ${uiState.selectedDevice}"
+                            data["usb.name"] = uiState.selectedDevice?.name ?: "unknown"
+                            data["usb.vidpid"] = uiState.selectedDevice?.vidpid ?: "unknown"
+                        }
+                        requestUsbPermission(uiState.selectedDevice!!.usbDevice, mUsbPermissionIntent)
+                    })
+
+                    LaunchedEffect(uiState.hasUsbPermission, showLayFlatDialog) {
+                        println("hasUsbPermission: ${uiState.hasUsbPermission}")
                     }
-                    requestUsbPermission(uiState.selectedDevice!!.usbDevice, mUsbPermissionIntent)
-                })
 
-                LaunchedEffect(uiState.hasUsbPermission, showLayFlatDialog) {
-                    println("hasUsbPermission: ${uiState.hasUsbPermission}")
-                }
-
-                if (uiState.hasUsbPermission && showLayFlatDialog) {
-                    LayFlatOnTableBottomSheet(
-                        onReady = {
-                            println("onReady")
-                            writeImage(
-                                uiState.openedImage!!, uiState.selectedDevice!!
-                            )
-                        },
-                        onDismissRequest = { showLayFlatDialog = false },
-                    )
+                    if (uiState.hasUsbPermission && showLayFlatDialog) {
+                        LayFlatOnTableBottomSheet(
+                            onReady = {
+                                println("onReady")
+                                writeImage(
+                                    uiState.openedImage!!, uiState.selectedDevice!!
+                                )
+                            },
+                            onDismissRequest = { showLayFlatDialog = false },
+                        )
+                    }
                 }
             }
         }
@@ -495,6 +511,72 @@ fun ConfirmationViewLayout(
                     confirmButton()
                 }
             }
+        },
+        expanded = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 1100.dp)
+                    .align(Alignment.Center)
+                    .safeDrawingPadding()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    title()
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        sourceCard(Modifier.fillMaxWidth(), false)
+                    }
+                    Icon(
+                        modifier = Modifier.size(56.dp),
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        destinationCard(Modifier.fillMaxWidth())
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        warningCard()
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.keyboard_shortcuts_confirm_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            cancelButton()
+                            confirmButton()
+                        }
+                    }
+                }
+            }
         }
     )
 
@@ -633,7 +715,10 @@ fun ConfirmationView(
                             )
                         }
                         Button(
-                            modifier = Modifier.appiumTag("grantUsbPermissionButton"),
+                            modifier = Modifier
+                                .appiumTag("grantUsbPermissionButton")
+                                .hoverHandCursor()
+                                .expressiveFocusBorder(MaterialTheme.shapes.medium),
                             onClick = askUsbPermission,
                             enabled = !uiState.hasUsbPermission,
                             contentPadding = if (!uiState.hasUsbPermission) PaddingValues(
@@ -693,13 +778,21 @@ fun ConfirmationView(
             }
         },
         cancelButton = {
-            OutlinedButton(onClick = onCancel) {
+            OutlinedButton(
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                onClick = onCancel
+            ) {
                 Text(stringResource(R.string.cancel))
             }
         },
         confirmButton = {
             Button(
-                modifier = Modifier.appiumTag("writeImageButton"),
+                modifier = Modifier
+                    .appiumTag("writeImageButton")
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium),
                 onClick = onConfirm,
                 enabled = uiState.selectedDevice != null && uiState.hasUsbPermission
             ) {
@@ -734,142 +827,159 @@ fun LayFlatOnTableBottomSheet(
     }
 
     ModalBottomSheet(onDismissRequest = onDismissRequest, sheetState = sheetState) {
-        if (sensor == null || !useGravitySensor) {
-            Text(
-                text = stringResource(R.string.lay_your_device_flat_no_accel),
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp, 16.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                var hideSheet by remember { mutableStateOf(false) }
-                LaunchedEffect(hideSheet) {
-                    if (hideSheet) {
-                        sheetState.hide()
-                        fireOnReady()
-                    }
-                }
-                Button(onClick = { hideSheet = true }) {
-                    Text(
-                        modifier = Modifier.appiumTag("layFlatSkipButton"),
-                        text = stringResource(R.string.continue_)
-                    )
-                }
-            }
-        } else {
-            val readings = 10
-            var hasBeenFlatOnTable by rememberSaveable { mutableStateOf(false) }
-            var gravityCircularBuffer by remember { mutableStateOf(emptyList<Float>()) }
-
-            val sensorListener = remember {
-                object : SensorEventListener {
-                    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-
-                    override fun onSensorChanged(event: SensorEvent) {
-                        gravityCircularBuffer = gravityCircularBuffer + event.values[2]
-                        if (gravityCircularBuffer.size > readings) {
-                            gravityCircularBuffer = gravityCircularBuffer.drop(1)
-                        }
-                    }
-                }
-            }
-            val movingAverage = remember(gravityCircularBuffer) {
-                if (gravityCircularBuffer.size >= readings) gravityCircularBuffer.average()
-                    .toFloat()
-                else 0f
-            }
-
-            val isFlatOnTable by remember(movingAverage) {
-                derivedStateOf {
-                    movingAverage > 9.7f
-                }
-            }
-            LaunchedEffect(isFlatOnTable) {
-                if (isFlatOnTable) {
-                    hasBeenFlatOnTable = true
-                }
-            }
-
-            DisposableEffect(sensor, sensorListener, sensorManager) {
-                println("Registering sensor listener")
-                sensorManager.registerListener(
-                    sensorListener, sensor, SensorManager.SENSOR_DELAY_NORMAL
+        Column(
+            modifier = Modifier
+                .widthIn(max = 560.dp)
+                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+        ) {
+            if (sensor == null || !useGravitySensor) {
+                Text(
+                    text = stringResource(R.string.lay_your_device_flat_no_accel),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center
                 )
-                onDispose {
-                    println("Unregistering sensor listener")
-                    sensorManager.unregisterListener(sensorListener)
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.lay_your_device_flat),
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                if (!hasBeenFlatOnTable) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(128.dp)
-                            .padding(15.dp),
-                        strokeWidth = 5.dp,
-                    )
-                } else {
-                    val progress by animateLottieCompositionAsState(
-                        composition, isPlaying = hasBeenFlatOnTable
-                    )
-                    val lottieDynamicProperties = rememberLottieDynamicProperties(
-                        rememberLottieDynamicProperty(
-                            property = LottieProperty.COLOR_FILTER, value = PorterDuffColorFilter(
-                                MaterialTheme.colorScheme.primary.toArgb(), PorterDuff.Mode.SRC_ATOP
-                            ), keyPath = arrayOf("**")
-                        )
-                    )
-                    LottieAnimation(
-                        composition, progress = { progress }, modifier = Modifier.size(128.dp),
-                        dynamicProperties = lottieDynamicProperties
-                    )
-                    LaunchedEffect(progress) {
-                        if (progress == 1f) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp, 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    var hideSheet by remember { mutableStateOf(false) }
+                    LaunchedEffect(hideSheet) {
+                        if (hideSheet) {
                             sheetState.hide()
                             fireOnReady()
                         }
                     }
-                }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp, 16.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                var hideSheet by remember { mutableStateOf(false) }
-                LaunchedEffect(hideSheet) {
-                    if (hideSheet) {
-                        sheetState.hide()
-                        fireOnReady()
+                    Button(
+                        modifier = Modifier
+                            .hoverHandCursor()
+                            .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                        onClick = { hideSheet = true }
+                    ) {
+                        Text(
+                            modifier = Modifier.appiumTag("layFlatSkipButton"),
+                            text = stringResource(R.string.continue_)
+                        )
                     }
                 }
-                OutlinedButton(onClick = { hideSheet = true }) {
-                    Text(
-                        modifier = Modifier.appiumTag("layFlatSkipButton"),
-                        text = stringResource(R.string.skip)
+            } else {
+                val readings = 10
+                var hasBeenFlatOnTable by rememberSaveable { mutableStateOf(false) }
+                var gravityCircularBuffer by remember { mutableStateOf(emptyList<Float>()) }
+
+                val sensorListener = remember {
+                    object : SensorEventListener {
+                        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+                        override fun onSensorChanged(event: SensorEvent) {
+                            gravityCircularBuffer = gravityCircularBuffer + event.values[2]
+                            if (gravityCircularBuffer.size > readings) {
+                                gravityCircularBuffer = gravityCircularBuffer.drop(1)
+                            }
+                        }
+                    }
+                }
+                val movingAverage = remember(gravityCircularBuffer) {
+                    if (gravityCircularBuffer.size >= readings) gravityCircularBuffer.average()
+                        .toFloat()
+                    else 0f
+                }
+
+                val isFlatOnTable by remember(movingAverage) {
+                    derivedStateOf {
+                        movingAverage > 9.7f
+                    }
+                }
+                LaunchedEffect(isFlatOnTable) {
+                    if (isFlatOnTable) {
+                        hasBeenFlatOnTable = true
+                    }
+                }
+
+                DisposableEffect(sensor, sensorListener, sensorManager) {
+                    println("Registering sensor listener")
+                    sensorManager.registerListener(
+                        sensorListener, sensor, SensorManager.SENSOR_DELAY_NORMAL
                     )
+                    onDispose {
+                        println("Unregistering sensor listener")
+                        sensorManager.unregisterListener(sensorListener)
+                    }
+                }
+
+                Text(
+                    text = stringResource(R.string.lay_your_device_flat),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    if (!hasBeenFlatOnTable) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(128.dp)
+                                .padding(15.dp),
+                            strokeWidth = 5.dp,
+                        )
+                    } else {
+                        val progress by animateLottieCompositionAsState(
+                            composition, isPlaying = hasBeenFlatOnTable
+                        )
+                        val lottieDynamicProperties = rememberLottieDynamicProperties(
+                            rememberLottieDynamicProperty(
+                                property = LottieProperty.COLOR_FILTER, value = PorterDuffColorFilter(
+                                    MaterialTheme.colorScheme.primary.toArgb(), PorterDuff.Mode.SRC_ATOP
+                                ), keyPath = arrayOf("**")
+                            )
+                        )
+                        LottieAnimation(
+                            composition, progress = { progress }, modifier = Modifier.size(128.dp),
+                            dynamicProperties = lottieDynamicProperties
+                        )
+                        LaunchedEffect(progress) {
+                            if (progress == 1f) {
+                                sheetState.hide()
+                                fireOnReady()
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp, 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    var hideSheet by remember { mutableStateOf(false) }
+                    LaunchedEffect(hideSheet) {
+                        if (hideSheet) {
+                            sheetState.hide()
+                            fireOnReady()
+                        }
+                    }
+                    OutlinedButton(
+                        modifier = Modifier
+                            .hoverHandCursor()
+                            .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                        onClick = { hideSheet = true }
+                    ) {
+                        Text(
+                            modifier = Modifier.appiumTag("layFlatSkipButton"),
+                            text = stringResource(R.string.skip)
+                        )
+                    }
                 }
             }
         }

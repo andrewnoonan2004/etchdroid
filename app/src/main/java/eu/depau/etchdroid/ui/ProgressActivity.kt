@@ -59,6 +59,10 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import eu.depau.etchdroid.ui.utils.ExpressiveWavyProgressIndicator
+import eu.depau.etchdroid.ui.utils.expressiveFocusBorder
+import eu.depau.etchdroid.ui.utils.handleKeyboardShortcuts
+import eu.depau.etchdroid.ui.utils.hoverHandCursor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -436,6 +440,78 @@ fun JobInProgressViewLayout(
                     }
                 }
             }
+        },
+        expanded = {
+            Row(
+                modifier = modifier
+                    .fillMaxSize()
+                    .widthIn(max = 1200.dp)
+                    .align(Alignment.Center)
+                    .safeDrawingPadding()
+                    .padding(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
+                        val (graphicRef, notificationsBannerRef) = createRefs()
+
+                        graphic(
+                            Modifier.constrainAs(graphicRef) {
+                                centerTo(parent)
+                            }
+                        )
+
+                        if (showNotificationsBanner) {
+                            Box(modifier = Modifier.constrainAs(notificationsBannerRef) {
+                                bottom.linkTo(graphicRef.bottom)
+                                centerHorizontallyTo(parent)
+                            }) {
+                                notificationsBanner()
+                            }
+                        }
+                    }
+                }
+
+                Card(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            title()
+                            subTitle()
+                        }
+                        Column(
+                            verticalArrangement = Arrangement.Bottom,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            progress()
+                        }
+                    }
+                }
+            }
         }
     )
 }
@@ -655,7 +731,9 @@ fun JobInProgressView(
                         OutlinedButton(
                             modifier = Modifier
                                 .appiumTag("notifications_dismiss_button")
-                                .telemetryTag("notifications_dismiss_button"),
+                                .telemetryTag("notifications_dismiss_button")
+                                .hoverHandCursor()
+                                .expressiveFocusBorder(MaterialTheme.shapes.medium),
                             onClick = dismissNotificationsBanner
                         ) {
                             Telemetry.addBreadcrumb(
@@ -667,7 +745,9 @@ fun JobInProgressView(
                         Button(
                             modifier = Modifier
                                 .appiumTag("notifications_enable_button")
-                                .telemetryTag("notifications_enable_button"),
+                                .telemetryTag("notifications_enable_button")
+                                .hoverHandCursor()
+                                .expressiveFocusBorder(MaterialTheme.shapes.medium),
                             onClick = requestNotificationsPermission
                         ) {
                             Telemetry.addBreadcrumb(
@@ -734,7 +814,7 @@ fun JobInProgressView(
             }
 
             if (uiState.percent >= 0) {
-                LinearProgressIndicator(
+                ExpressiveWavyProgressIndicator(
                     progress = { uiState.percent / 100f },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -742,7 +822,7 @@ fun JobInProgressView(
                     color = MaterialTheme.colorScheme.primary
                 )
             } else {
-                LinearProgressIndicator(
+                ExpressiveWavyProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 32.dp),
@@ -755,6 +835,8 @@ fun JobInProgressView(
                     modifier = Modifier
                         .appiumTag("skip_verification_button")
                         .telemetryTag("skip_verification_button")
+                        .hoverHandCursor()
+                        .expressiveFocusBorder(MaterialTheme.shapes.medium)
                         .fillMaxWidth()
                         .padding(horizontal = 32.dp),
                     onClick = cancelVerification
@@ -875,6 +957,64 @@ fun SuccessViewLayout(
                     bottomCard()
                 }
             }
+        },
+        expanded = {
+            Row(
+                modifier = modifier
+                    .fillMaxSize()
+                    .widthIn(max = 1100.dp)
+                    .align(Alignment.Center)
+                    .safeDrawingPadding()
+                    .padding(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    animation()
+                }
+
+                Card(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        title()
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    8.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                            ) {
+                                buttons()
+                            }
+                            bottomCard()
+                        }
+                    }
+                }
+            }
         }
     )
 }
@@ -930,7 +1070,12 @@ fun SuccessView() {
             val reviewHelper = remember { activity?.let { WriteReviewHelper(it) } }
 
             if (reviewHelper != null) {
-                OutlinedButton(onClick = { reviewHelper.launchReviewFlow() }) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .hoverHandCursor()
+                        .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                    onClick = { reviewHelper.launchReviewFlow() }
+                ) {
                     Text(
                         text = if (reviewHelper.isGPlayFlavor) stringResource(
                             R.string.write_a_review
@@ -940,25 +1085,35 @@ fun SuccessView() {
                 }
             }
             if (!BuildConfig.PLAY_STORE) {
-                OutlinedButton(onClick = {
-                    activity?.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            "https://etchdroid.app/donate/".toUri()
+                OutlinedButton(
+                    modifier = Modifier
+                        .hoverHandCursor()
+                        .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                    onClick = {
+                        activity?.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                "https://etchdroid.app/donate/".toUri()
+                            )
                         )
-                    )
-                }) {
+                    }
+                ) {
                     Text(stringResource(R.string.support_the_project))
                 }
             }
             val context = LocalContext.current
-            OutlinedButton(onClick = {
-                context.startActivity(Intent(context, MainActivity::class.java).apply {
-                    flags =
-                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                })
-                activity?.finish()
-            }) {
+            OutlinedButton(
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                onClick = {
+                    context.startActivity(Intent(context, MainActivity::class.java).apply {
+                        flags =
+                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
+                    activity?.finish()
+                }
+            ) {
                 Text(stringResource(R.string.write_another_image))
             }
         },
@@ -1094,6 +1249,60 @@ fun FatalErrorViewLayout(
                     }
                 }
             }
+        },
+        expanded = {
+            Row(
+                modifier = modifier
+                    .fillMaxSize()
+                    .widthIn(max = 1100.dp)
+                    .align(Alignment.Center)
+                    .safeDrawingPadding()
+                    .padding(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
+
+                Card(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        title()
+                        message()
+                        suggestion()
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                8.dp,
+                                Alignment.CenterHorizontally
+                            )
+                        ) {
+                            buttons()
+                        }
+                    }
+                }
+            }
         }
     )
 }
@@ -1147,41 +1356,56 @@ fun FatalErrorView(
         buttons = {
             val context = LocalContext.current
             val activity = context.activity
-            OutlinedButton(onClick = {
-                activity?.startActivity(
-                    Intent(
-                        Intent.ACTION_VIEW,
-                        "https://github.com/etchdroid/etchdroid/issues".toUri()
+            OutlinedButton(
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                onClick = {
+                    activity?.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            "https://github.com/etchdroid/etchdroid/issues".toUri()
+                        )
                     )
-                )
-            }) {
+                }
+            ) {
                 Text(text = stringResource(R.string.view_github_issues))
             }
 
             if (exception is VerificationFailedException && activity != null) {
-                Button(onClick = {
-                    val serviceIntent = getStartJobIntent(
-                        imageUri,
-                        device,
-                        jobId,
-                        0,
-                        false,
-                        activity,
-                        WorkerService::class.java
-                    )
-                    Log.d(TAG, "Starting service with intent: $serviceIntent")
-                    activity.startForegroundServiceCompat(serviceIntent)
-                }) {
+                Button(
+                    modifier = Modifier
+                        .hoverHandCursor()
+                        .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                    onClick = {
+                        val serviceIntent = getStartJobIntent(
+                            imageUri,
+                            device,
+                            jobId,
+                            0,
+                            false,
+                            activity,
+                            WorkerService::class.java
+                        )
+                        Log.d(TAG, "Starting service with intent: $serviceIntent")
+                        activity.startForegroundServiceCompat(serviceIntent)
+                    }
+                ) {
                     Text(stringResource(R.string.try_again))
                 }
             }
 
-            Button({
-                context.startActivity(Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                })
-                activity?.finish()
-            }) {
+            Button(
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                onClick = {
+                    context.startActivity(Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
+                    activity?.finish()
+                }
+            ) {
                 Text(text = stringResource(R.string.start_over))
             }
         }

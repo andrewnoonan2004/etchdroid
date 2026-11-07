@@ -12,19 +12,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import eu.depau.etchdroid.ui.utils.expressiveFocusBorder
+import eu.depau.etchdroid.ui.utils.handleKeyboardShortcuts
+import eu.depau.etchdroid.ui.utils.hoverHandCursor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -71,7 +78,13 @@ class AboutActivity : ActivityBase() {
 
         setContent {
             MainView(viewModel = mViewModel) {
-                AboutView(mViewModel)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .handleKeyboardShortcuts(onBack = { finish() })
+                ) {
+                    AboutView(mViewModel)
+                }
             }
         }
     }
@@ -172,6 +185,67 @@ fun AboutViewLayout(
                             actionButtons()
                         }
 
+                    }
+                }
+            }
+        },
+        expanded = {
+            Row(
+                modifier = modifier
+                    .fillMaxSize()
+                    .widthIn(max = 1100.dp)
+                    .align(Alignment.Center)
+                    .safeDrawingPadding()
+                    .padding(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left pane: Logo and app info
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        logo()
+                        appTitle()
+                        versionInfo()
+                    }
+                }
+
+                // Right pane: Contributors and action buttons in an expressive card
+                Card(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        contributorsInfo()
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                12.dp,
+                                Alignment.CenterHorizontally
+                            )
+                        ) {
+                            actionButtons()
+                        }
                     }
                 }
             }
@@ -314,6 +388,9 @@ fun AboutView(viewModel: ThemeViewModel) {
         actionButtons = {
             val activity = LocalContext.current.activity
             OutlinedButton(
+                modifier = Modifier
+                    .hoverHandCursor()
+                    .expressiveFocusBorder(MaterialTheme.shapes.medium),
                 onClick = {
                     activity?.startActivity(
                         Intent(
@@ -327,6 +404,9 @@ fun AboutView(viewModel: ThemeViewModel) {
             }
             if (!BuildConfig.PLAY_STORE) {
                 OutlinedButton(
+                    modifier = Modifier
+                        .hoverHandCursor()
+                        .expressiveFocusBorder(MaterialTheme.shapes.medium),
                     onClick = {
                         activity?.startActivity(
                             Intent(
@@ -341,7 +421,12 @@ fun AboutView(viewModel: ThemeViewModel) {
             }
             val reviewHelper = remember { activity?.let { WriteReviewHelper(it) } }
             if (reviewHelper != null) {
-                OutlinedButton(onClick = { reviewHelper.launchReviewFlow() }) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .hoverHandCursor()
+                        .expressiveFocusBorder(MaterialTheme.shapes.medium),
+                    onClick = { reviewHelper.launchReviewFlow() }
+                ) {
                     Text(
                         text = if (reviewHelper.isGPlayFlavor) stringResource(
                             R.string.write_a_review
