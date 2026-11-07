@@ -35,6 +35,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
     buildTypes {
         release {
@@ -99,10 +102,15 @@ android {
         unitTests.all {
             it.useJUnitPlatform()
             it.maxHeapSize = "4g"
+            it.systemProperty("robolectric.conscryptMode", "OFF")
             it.systemProperty("robolectric.dependency.proxy.host", project.findProperty("systemProp.https.proxyHost") ?: System.getenv("ROBOLECTRIC_PROXY_HOST"))
             it.systemProperty("robolectric.dependency.proxy.port", project.findProperty("systemProp.https.proxyPort") ?: System.getenv("ROBOLECTRIC_PROXY_PORT"))
         }
     }
+}
+
+base {
+    archivesName.set("EtchDroid")
 }
 
 kotlin {
