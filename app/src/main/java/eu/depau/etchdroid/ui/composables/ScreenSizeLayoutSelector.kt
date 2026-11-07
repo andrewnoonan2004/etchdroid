@@ -9,32 +9,61 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.window.core.layout.WindowSizeClass
 
+/**
+ * Responsive layout form factors supporting phones (portrait & landscape)
+ * as well as large screens (foldables, tablets, laptops, and desktop displays).
+ */
+enum class LayoutFormFactor {
+    COMPACT,         // Standard phone portrait
+    COMPACT_HEIGHT,  // Phone landscape (short height)
+    EXPANDED         // Large screens: Tablets, foldables unfolded, laptops, and desktops
+}
+
+@Composable
+fun rememberLayoutFormFactor(
+    windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+): LayoutFormFactor {
+    return remember(windowSizeClass) {
+        val isCompactHeight = !windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+        val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
+        val isMediumWidth = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+
+        when {
+            isExpandedWidth -> LayoutFormFactor.EXPANDED
+            isCompactHeight -> LayoutFormFactor.COMPACT_HEIGHT
+            isMediumWidth -> LayoutFormFactor.EXPANDED
+            else -> LayoutFormFactor.COMPACT
+        }
+    }
+}
 
 @Composable
 fun ScreenSizeLayoutSelector(
     modifier: Modifier = Modifier,
     normal: @Composable BoxScope.() -> Unit,
     compact: @Composable BoxScope.() -> Unit,
+    expanded: (@Composable BoxScope.() -> Unit)? = null,
     windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
 ) {
-    val isCompact by remember {
-        derivedStateOf {
-            windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT
-        }
-    }
+    val formFactor = rememberLayoutFormFactor(windowSizeClass)
 
     AnimatedContent(
-        targetState = isCompact,
-        label = "portrait/landscape switch"
-    ) {
+        targetState = formFactor,
+        label = "adaptive layout switch"
+    ) { currentFormFactor ->
         Box(modifier) {
-            if (it) {
-                compact()
-            } else {
-                normal()
+            when (currentFormFactor) {
+                LayoutFormFactor.EXPANDED -> {
+                    if (expanded != null) {
+                        expanded()
+                    } else {
+                        normal()
+                    }
+                }
+                LayoutFormFactor.COMPACT_HEIGHT -> compact()
+                LayoutFormFactor.COMPACT -> normal()
             }
         }
     }

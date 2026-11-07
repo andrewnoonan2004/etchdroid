@@ -137,4 +137,17 @@
     <string name="etchdroid_uses_telemetry" comment="Displayed in the main app screen on first launch in a toast/snackbar. It should be short and concise.">EtchDroid sends telemetry info.</string>
     <string name="learn_more" comment="Displayed in the main app screen on first launch as a snackbar action button. It should be short and concise.">Learn more</string>
     <string name="send_anonymous_data" comment="Displayed in the main app menu; controls whether the app sends anonymous telemetry info.">Send anonymous data</string>
+    <string name="app_tagline">Write OS images to USB drives without root</string>
+    <string name="keyboard_shortcuts">Keyboard shortcuts</string>
+    <string name="shortcut_open">Ctrl+O: Open disk image</string>
+    <string name="shortcut_refresh">Ctrl+R / F5: Refresh USB drives</string>
+    <string name="shortcut_esc">Esc: Cancel / Dismiss</string>
+    <string name="no_usb_drives_detected">No USB drives detected</string>
+    <string name="connect_drive_prompt">Connect a USB flash drive or memory card to your device.</string>
+    <string name="detected_drives">Connected USB Drives</string>
+    <string name="usb_drive_dashboard_title">Connected USB Drives</string>
+    <string name="keyboard_shortcuts_hint">Shortcuts: Ctrl+O: Open • Ctrl+R: Refresh • Esc: Back</string>
+    <string name="keyboard_shortcuts_confirm_hint">Shortcuts: Enter: Write Image • Esc: Cancel</string>
+    <string name="select_this_device">Select drive</string>
+    <string name="material3_expressive">Material 3 Expressive</string>
 </resources>
