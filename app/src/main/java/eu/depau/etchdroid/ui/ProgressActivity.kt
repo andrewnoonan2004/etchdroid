@@ -1444,22 +1444,23 @@ fun AutoJobRestarter(
     // can't be started from the background (Android 12+): hold the restart until visible.
     val scope = rememberCoroutineScope()
     val lifecycle = (activity as LifecycleOwner).lifecycle
+    val plugInSameUsb = stringResource(R.string.plug_in_the_same_usb)
+    val usbResuming = stringResource(R.string.usb_device_reconnected_resuming)
+    val permissionDeniedTemplate = stringResource(R.string.permission_denied_for_usb_device)
 
     fun onUsbAttached(usbDevice: UsbDevice) {
         expectedDevice.findMatchingForNew(usbDevice) ?: return
         activity.requestUsbPermission(usbDevice, pendingIntent)
     }
 
-    val broadcastReceiver = remember {
+    val broadcastReceiver = remember(plugInSameUsb, usbResuming, permissionDeniedTemplate) {
         broadcastReceiver { intent ->
             when (intent.action) {
                 UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
                     val usbDevice = intent.usbDevice ?: return@broadcastReceiver
                     if (!usbDevice.isMassStorageDevice) return@broadcastReceiver
                     if (usbDevice doesNotMatch expectedDevice.usbDevice) {
-                        activity.toast(
-                            context.getString(R.string.plug_in_the_same_usb), Toast.LENGTH_SHORT
-                        )
+                        activity.toast(plugInSameUsb, Toast.LENGTH_SHORT)
                     } else {
                         onUsbAttached(usbDevice)
                     }
@@ -1471,21 +1472,19 @@ fun AutoJobRestarter(
                     if (!usbDevice.isMassStorageDevice) return@broadcastReceiver
                     val msd = expectedDevice.findMatchingForNew(usbDevice)
                     if (msd == null) {
-                        activity.toast(
-                            context.getString(R.string.plug_in_the_same_usb), Toast.LENGTH_SHORT
-                        )
+                        activity.toast(plugInSameUsb, Toast.LENGTH_SHORT)
                         return@broadcastReceiver
                     }
 
                     val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
                     if (!granted) {
                         activity.toast(
-                            context.getString(
-                                R.string.permission_denied_for_usb_device, usbDevice.deviceName
+                            String.format(
+                                permissionDeniedTemplate, usbDevice.deviceName
                             )
                         )
                     } else {
-                        activity.toast(context.getString(R.string.usb_device_reconnected_resuming))
+                        activity.toast(usbResuming)
                         val serviceIntent = getStartJobIntent(
                             imageUri,
                             msd,

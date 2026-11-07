@@ -146,8 +146,8 @@ fun Modifier.handleKeyboardShortcuts(
  */
 @Composable
 fun ExpressiveWavyProgressIndicator(
-    progress: Float = -1f, // 0.0f to 1.0f (or < 0 for indeterminate)
     modifier: Modifier = Modifier,
+    progress: Float = -1f, // 0.0f to 1.0f (or < 0 for indeterminate)
     color: Color = MaterialTheme.colorScheme.primary,
     trackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     waveHeight: Dp = 4.dp,
