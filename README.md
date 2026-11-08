@@ -68,14 +68,39 @@ everyone!
 
 See the [privacy policy](https://etchdroid.app/privacy/) for more information.
 
-## Screenshots
+## Screenshots & Modern Material 3 Expressive UI
+
+EtchDroid features **Material 3 Expressive** styling with organic motion, expressive surface container elevation, animated wavy progress indicators, and full adaptability for foldables, tablets, laptops, and desktop displays (with hardware keyboard shortcuts and mouse hover cursor feedback).
+
+### Mobile Phone Layouts
 
 <p align="center">
-<!-- Exact dimensions are specified to avoid the images jumping as they load -->
-<!-- The "force inline" comment ensures the images stay inline, the fact that it's needed might be a GFM bug -->
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/0.png" width="100" height="216"> <!-- Force inline -->
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="100" height="216"> <!-- Force inline -->
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="100" height="216"> <!-- Force inline -->
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="100" height="216"> <!-- Force inline -->
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="100" height="216"> <!-- Force inline -->
+  <img src="docs/images/screenshots/01_home_screen.jpg" width="22%" alt="Home Screen (Material 3 Expressive)"/>
+  <img src="docs/images/screenshots/02_drive_picker.jpg" width="22%" alt="USB Drive Picker Bottom Sheet"/>
+  <img src="docs/images/screenshots/03_confirm_operation.jpg" width="22%" alt="Confirm Operation"/>
+  <img src="docs/images/screenshots/04_writing_progress.jpg" width="22%" alt="Writing Image with Wavy Progress Indicator"/>
 </p>
+
+| Page | Description |
+|:---|:---|
+| **Home Screen** | Hero layout with Material 3 Expressive Floating Action Button (`Write an image`), dark/light theme support, and edge-to-edge system bars. |
+| **Drive Picker** | Expressive bottom sheet with detected storage device cards (VID/PID) and animated wavy scanning progress indicator. |
+| **Confirm Operation** | Clear comparison between source disk image (`.iso`, `.img`) and target USB flash drive with destructive overwrite safety callout. |
+| **Flashing Progress** | Live write/verify status with transfer rate (`MB/s`), byte counts, skip verification option, and animated M3 Expressive sinusoidal wavy progress bar. |
+
+### Large Screen, Tablet & Laptop Adaptive Dashboard
+
+When running on Android laptops, tablets, foldables, or desktop environments, EtchDroid automatically shifts to a dual-pane layout:
+
+<p align="center">
+  <img src="docs/images/screenshots/05_large_screen_dashboard.jpg" width="85%" alt="EtchDroid Large Screen Adaptive Dashboard"/>
+</p>
+
+- **Dual-Pane Layout**: Hero controls on the left, live Connected USB Drives dashboard on the right.
+- **Mouse & Trackpad Support**: Pointing hand cursor on hover across all interactive buttons, cards, and list items.
+- **Accessible Focus Rings**: High-contrast focus borders for D-pad and keyboard navigation (`Tab` / `Shift+Tab`).
+- **Hardware Keyboard Shortcuts**:
+  - `Ctrl + O` / `Cmd + O`: Open disk image file picker
+  - `Ctrl + R` / `F5`: Rescan and refresh connected USB storage drives
+  - `Enter`: Confirm and start writing image
+  - `Esc`: Cancel or go back
