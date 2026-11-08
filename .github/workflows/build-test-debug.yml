@@ -69,13 +69,13 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: app-${{ matrix.variant }}-debug
-          path: app/build/outputs/apk/${{ matrix.variant }}/debug/app-${{ matrix.variant }}-debug.apk
+          path: app/build/outputs/apk/${{ matrix.variant }}/debug/*.apk
 
       - name: Upload built optimized APK
         uses: actions/upload-artifact@v5
         with:
           name: app-${{ matrix.variant }}-optimized
-          path: app/build/outputs/apk/${{ matrix.variant }}/optimized/app-${{ matrix.variant }}-optimized.apk
+          path: app/build/outputs/apk/${{ matrix.variant }}/optimized/*.apk
 
   unit-tests:
     name: Unit tests for ${{ matrix.variant }}
